@@ -16,48 +16,49 @@ namespace Mandelbrot
             Console.WriteLine("Starting program...");
             const int size = 4096;
             
-            int[,] unoptimized = ParallelForRun(size);
+            int[] unoptimized = ParallelForRun(size);
             
-            DataToImage(size, unoptimized);
+            DataToImage(size, unoptimized, "TestSingleArray");
             
             stopwatch.Stop();
             Console.WriteLine($"Program successfully completed in {stopwatch.ElapsedMilliseconds}ms");
         }
 
-        private static void DataToImage(int size, int[,] unoptimized)
+        private static void DataToImage(int size, int[] data, string name)
         {
             using (var surface = SKSurface.Create(width: size, height: size, SKColorType.Rgba8888, SKAlphaType.Premul))
             {
                 SKCanvas canvas = surface.Canvas;
                 canvas.DrawColor(SKColors.Coral);
 
-                for (int i = 0; i < unoptimized.GetLength(0); i++)
+                for (int i = 0; i < size; i++)
                 {
-                    for (int j = 0; j < unoptimized.GetLength(1); j++)
+                    for (int j = 0; j < size; j++)
                     {
-                        byte rgb = (byte)unoptimized[i, j];
-                        canvas.DrawPoint(new SKPoint(i, j),
-                            unoptimized[i, j] >= MaxIterations ? SKColors.Black : new SKColor(rgb, 0, 100));
+                        byte rgb = (byte)data[i * size + j];
+                        
+                        canvas.DrawPoint(new SKPoint(i , j),
+                            data[i * size + j] >= MaxIterations ? SKColors.Black : new SKColor(rgb, 0, 100));
                     }
                 }
 
-                OutputImage(surface, "ParallelFor");
+                OutputImage(surface, name);
             }
         }
 
-        public static int[,] UnoptimizedRun(int size)
+        public static int[] UnoptimizedRun(int size)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            int[,] output = new int[size, size];
+            int[] output = new int[size * size];
             
-            for (int i = 0; i < output.GetLength(0); i += 1)
+            for (int i = 0; i < size; i += 1)
             {
-                for (int j = 0; j < output.GetLength(1); j += 1)
+                for (int j = 0; j < size; j += 1)
                 {
                     double x = (i - size / 2d) / (size / 4d);
                     double y = (j - size / 2d) / (size / 4d);
-                    output[i, j] = IterCount(x, y, MaxIterations);
+                    output[i * size + j] = IterCount(x, y, MaxIterations);
                 }
             }
 
@@ -66,19 +67,19 @@ namespace Mandelbrot
             return output;
         }
         
-        public static int[,] ParallelForRun(int size)
+        public static int[] ParallelForRun(int size)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            int[,] output = new int[size, size];
+            int[] output = new int[size * size];
 
-            Parallel.For(0, output.GetLength(0), i =>
+            Parallel.For(0, size, i =>
             {
-                for (int j = 0; j < output.GetLength(1); j += 1)
+                for (int j = 0; j < size; j += 1)
                 {
                     double x = (i - size / 2d) / (size / 4d);
                     double y = (j - size / 2d) / (size / 4d);
-                    output[i, j] = IterCount(x, y, MaxIterations);
+                    output[i * size + j] = IterCount(x, y, MaxIterations);
                 }
             });
 
